@@ -1,0 +1,78 @@
+<!doctype html>
+<html lang="fr"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="referrer" content="no-referrer"><meta name="robots" content="noindex, nofollow">
+<title>Foodrise</title>
+<style>
+:root{--ink:#140F2E;--mute:#4F4876;--paper:#F4F0FF;--card:#FFFFFF;--violet:#5B2EFF;--coral:#FF6B4A;--line:#DAD3F5}
+@media (prefers-color-scheme:dark){:root{--ink:#F6F3FF;--mute:#B8B0DE;--paper:#0D0825;--card:#16103A;--violet:#A48CFF;--line:#30276B}}
+*{box-sizing:border-box}
+body{margin:0;min-height:100vh;display:flex;align-items:center;justify-content:center;background:var(--paper);color:var(--ink);font:17px/1.55 -apple-system,BlinkMacSystemFont,"SF Pro Rounded","Segoe UI",sans-serif}
+main{width:100%;max-width:460px;padding:24px 20px}
+.card{background:var(--card);border:1px solid var(--line);border-radius:24px;padding:32px 24px;text-align:center}
+.brand{font-weight:900;letter-spacing:.18em;font-size:.85rem;color:var(--violet);margin-bottom:18px}
+.icon{font-size:2.4rem;line-height:1;margin-bottom:10px}
+h1{font-size:1.6rem;line-height:1.2;margin:0 0 10px}
+p{color:var(--mute);margin:0 0 20px}
+a.btn{display:inline-block;background:var(--coral);color:#0D0825;font-weight:800;text-decoration:none;border-radius:999px;padding:16px 26px;white-space:nowrap}
+.small{font-size:.9rem;margin:18px 0 0}
+.lang{margin-top:18px;font-size:.85rem}.lang a{color:var(--violet);text-decoration:none;font-weight:700}
+[hidden]{display:none!important}
+</style></head>
+<body><main><div class="card">
+<div class="brand">FOODRISE</div>
+<div class="icon" id="icon" aria-hidden="true">✓</div>
+<h1 id="title">…</h1>
+<p id="text"></p>
+<a class="btn" id="open" href="foodrise://auth" hidden></a>
+<p class="small" id="hint"></p>
+<div class="lang"><a href="#" id="toggle">English</a></div>
+</div></main>
+<script>
+(function () {
+  // Aucune donnée n'est envoyée nulle part : la page lit seulement le fragment de l'adresse (jamais transmis au serveur)
+  // pour relayer les jetons vers l'app (foodrise://auth#…) et afficher un message adapté.
+  var hash = location.hash.replace(/^#/, '');
+  var p = new URLSearchParams(hash);
+  var hasError = !!(p.get('error') || p.get('error_code'));
+  var type = p.get('type') || '';
+  var hasTokens = !!p.get('access_token');
+  var state = hasError ? 'error' : (hasTokens && type === 'recovery') ? 'recovery' : hasTokens ? 'confirmed' : 'plain';
+  var openLink = 'foodrise://auth' + (hash ? '#' + hash : '');
+  var T = {
+    fr: {
+      error: ['⚠️', 'Lien déjà utilisé ou expiré', "Si tu viens de confirmer ton adresse, ouvre Foodrise et connecte-toi simplement. Sinon, demande un nouvel e-mail depuis l'app.", 'Ouvrir Foodrise'],
+      confirmed: ['✓', 'Adresse e-mail confirmée', 'Ouvre Foodrise pour terminer ta connexion.', 'Ouvrir Foodrise'],
+      recovery: ['🔑', 'Choisis un nouveau mot de passe', "Ouvre Foodrise pour définir ton nouveau mot de passe.", 'Ouvrir Foodrise'],
+      plain: ['✓', 'Merci !', "Retourne dans l'app Foodrise pour continuer.", 'Ouvrir Foodrise'],
+      hint: "Si l'app ne s'ouvre pas : ouvre Foodrise à la main, puis touche « Se connecter » avec ton e-mail et ton mot de passe.",
+      toggle: 'English'
+    },
+    en: {
+      error: ['⚠️', 'Link already used or expired', "If you just confirmed your address, open Foodrise and simply sign in. Otherwise, request a new email from the app.", 'Open Foodrise'],
+      confirmed: ['✓', 'Email address confirmed', 'Open Foodrise to finish signing in.', 'Open Foodrise'],
+      recovery: ['🔑', 'Choose a new password', 'Open Foodrise to set your new password.', 'Open Foodrise'],
+      plain: ['✓', 'Thank you!', 'Go back to the Foodrise app to continue.', 'Open Foodrise'],
+      hint: "If the app doesn't open: open Foodrise yourself, then tap “Sign in” with your email and password.",
+      toggle: 'Français'
+    }
+  };
+  var lang = (navigator.language || 'fr').toLowerCase().indexOf('fr') === 0 ? 'fr' : 'en';
+  function render() {
+    var t = T[lang], s = t[state];
+    document.documentElement.lang = lang;
+    document.getElementById('icon').textContent = s[0];
+    document.getElementById('title').textContent = s[1];
+    document.getElementById('text').textContent = s[2];
+    var b = document.getElementById('open'); b.textContent = s[3]; b.href = openLink; b.hidden = false;
+    document.getElementById('hint').textContent = t.hint;
+    document.getElementById('toggle').textContent = t.toggle;
+    document.title = 'Foodrise';
+  }
+  document.getElementById('toggle').addEventListener('click', function (e) { e.preventDefault(); lang = lang === 'fr' ? 'en' : 'fr'; render(); });
+  render();
+  // Retire les jetons de la barre d'adresse (le lien « Ouvrir Foodrise » les garde) : ils ne restent pas dans l'historique du navigateur.
+  if (hash && window.history && history.replaceState) history.replaceState(null, '', location.pathname);
+  // Tentative d'ouverture automatique de l'app (iOS demande confirmation) ; le bouton reste disponible si elle échoue.
+  if (hasTokens) setTimeout(function () { window.location.href = openLink; }, 600);
+})();
+</script></body></html>
